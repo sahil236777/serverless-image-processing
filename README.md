@@ -81,7 +81,8 @@ The system is designed using a fully serverless architecture. Users upload image
 
 ### 3.3 Architectural Diagram
 
-![architeture diagram](architeture diagram.png)
+![architeture diagram](https://github.com/user-attachments/assets/b9982e47-3a2f-4590-b9d0-e57c63e667ed)
+
 
 ## 4. Data Dictionary
 
@@ -122,7 +123,7 @@ The system stores image metadata in a DynamoDB table, while actual image files a
 
 #### Entity Relationship (ERD Summary):
 
-![ERD Summary](ERD Summary.png)
+![ERD Summary](https://github.com/user-attachments/assets/0be8f689-a98b-4036-ad23-6d88884e1ca0)
 
 - **Primary Key:** ID
 - **No secondary indexes** are used in the base implementation but can be added for optimization (e.g., query by filename or timestamp).
@@ -142,7 +143,8 @@ If time allows, a minimal web frontend using HTML and JavaScript can be built to
 
 ### 6.2 User Interface Navigation Flow
 
-![User Interface Navigation Flow](User Interface Navigation Flow.png)
+![User Interface Navigation Flow](https://github.com/user-attachments/assets/5ab612a6-6389-4f31-b5d2-f0b79f986f81)
+
 
 ### 6.3 Use Cases / User Function Description
 
