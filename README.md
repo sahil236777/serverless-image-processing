@@ -4,7 +4,7 @@
 **Serverless Image Processing Application**
 
 ### 1.2 Description
-This project implements a fully serverless cloud-native image processing solution using AWS. The application allows users to upload images via a REST API. Once uploaded, the images are automatically processed using AWS Lambda (resized, converted to grayscale, and watermarked), then stored securely in an S3 bucket. Metadata such as upload timestamps and processing status is stored in DynamoDB. The system is designed with scalability, security, and monitoring in mind, leveraging key AWS services and best practices for cloud architecture.
+This project implements a fully serverless cloud-native image processing solution using AWS. The application allows users to upload images via a REST API. Once uploaded, the images are automatically processed using AWS Lambda (resized, and converted to grayscale), then stored securely in an S3 bucket. Metadata such as upload timestamps and processing status is stored in DynamoDB. The system is designed with scalability, security, and monitoring in mind, leveraging key AWS services and best practices for cloud architecture.
 
 ## 2. Overview
 
@@ -24,7 +24,7 @@ Optional enhancements include authentication via AWS Cognito and accelerated del
 
 #### 2.3.1 Functional Requirements
 - Users can upload images through an API.
-- Uploaded images are processed automatically (resize, grayscale, watermark).
+- Uploaded images are processed automatically (resize, grayscale).
 - Processed images are saved to S3.
 - Metadata (filename, status, timestamp) is logged in DynamoDB.
 - Images and metadata can be retrieved via API.
@@ -69,7 +69,29 @@ Optional enhancements include authentication via AWS Cognito and accelerated del
 ## 3. System Architecture
 
 ### 3.1 Overview
-The system is designed using a fully serverless architecture. Users upload images via an API Gateway endpoint. The image is passed to an AWS Lambda function, which processes the image (resize, grayscale, watermark). Processed images are saved to an Amazon S3 bucket, while metadata (e.g., filename, timestamp, status) is stored in a DynamoDB table. CloudWatch tracks logs, performance, and anomalies.
+The system is designed using a fully serverless architecture. Users upload images via an API Gateway endpoint. The image is passed to an AWS Lambda function, which processes the image (resize, grayscale). Processed images are saved to an Amazon S3 bucket, while metadata (e.g., filename, timestamp, status) is stored in a DynamoDB table. CloudWatch tracks logs, performance, and anomalies.
+Specifically, the architecture is based on the following workflow:
+
+1. **Input**: The user converts an image to base64 using the command below and submits it to the API endpoint:
+
+   ```bash
+   base64 -w 0 lake_side_view.jpg > lake_side_view_encoded.txt
+   ```
+
+   The image selected for this demonstration is the lake-view image retrieved from unsplash shown below.
+
+   ![input-1-lake-view](https://github.com/user-attachments/assets/bc0a7256-4378-4f74-b6fe-21663df121a2)
+
+
+2. **API Gateway**: Receives POST requests containing base64-encoded image content.
+
+3. **Lambda Function**: Decodes and processes the image (resize + grayscale using Pillow) and saves it as a PNG to an S3 bucket.
+
+4. **S3**: Receives the processed image under the `processed/` folder.
+
+5. **DynamoDB**: Logs metadata such as ID, filename, timestamp, status, image size, and format.
+
+6. **CloudWatch**: Logs success and error events for traceability.
 
 ### 3.2 Architectural Components
 
@@ -132,28 +154,35 @@ The system stores image metadata in a DynamoDB table, while actual image files a
 
 ### 6.1 User Interface Design Overview
 
-This project is backend-focused and primarily designed to be accessed via HTTP APIs. A basic user interface (UI) may be implemented later for demonstration or testing purposes, such as a simple web form to upload images.
+- ### 6.1 Interaction Using Postman
 
-For now, users interact with the system using tools like Postman or `curl` to make POST requests to the API Gateway endpoint.
+  ![User Interface Navigation Flow](https://github.com/user-attachments/assets/5e6a3450-61c5-43a2-ac9c-d8d9536fdc1f)
 
-If time allows, a minimal web frontend using HTML and JavaScript can be built to:
-- Select and upload image files
-- Display upload status and processed image preview
-- Show basic metadata from DynamoDB (e.g., filename, timestamp)
+  Users interact with the API using Postman. The steps to configure Postman are:
 
-### 6.2 User Interface Navigation Flow
+  1. **Open Postman** and select the HTTP method as `POST`.
+  2. **Set the endpoint URL** pointing to your deployed API Gateway endpoint.
+     The endpoint is: **`https://mj045ps15a.execute-api.us-west-2.amazonaws.com/default/imageProcessor`**
+  4. **Set Headers**:
+     - Key: `Content-Type`, Value: `text/plain`
+        ![step-1-disable-the default-content-type-and-add-a-new-type-of-text-plain](https://github.com/user-attachments/assets/9f1a666e-dea9-45bf-a06d-4a8426655492)
+  5. **Select Body tab**, choose `raw`, and paste the base64 content of the image.
+     ![step-2-select-body-then-raw-and-change-the blue-part-next-to-graphql-to-text-and-paste-the-base64-image-content-therein](https://github.com/user-attachments/assets/a6d54a03-e15e-445c-9a0a-e0d1abb5d087)
+  6. **Send Request**. A successful response returns HTTP 200 and a message containing the processed file path.
+      ![output-4-ok-status](https://github.com/user-attachments/assets/d152d492-d3f7-4ab4-b1c4-9f327d1922d6)
 
-![User Interface Navigation Flow](https://github.com/user-attachments/assets/5ab612a6-6389-4f31-b5d2-f0b79f986f81)
+  ### 6.2 Outputs
+
+  After a successful image POST request:
+
+  - **Output 1**: The processed image is uploaded to S3 
+    ![output-1-s3-upload-files](https://github.com/user-attachments/assets/233aff9c-aede-4a93-a2fe-4aff92501903)
+  - **Output 2**: The image's metadata is uploaded to DynamoDB 
+    ![output-2-dynamodb-upload-meta](https://github.com/user-attachments/assets/075d3dbd-eedf-4984-a557-bc40f9073a77)
+  - **Output 3**: API Gateway returns a `200 OK` status with confirmation 
+    ![output-4-ok-status](https://github.com/user-attachments/assets/e11e2f63-3841-42aa-a5f2-739567b7ff7a)
+  - **Outout 4**: The grayscaled image output.
+
+    ![output-3-lake-view-grayscale](https://github.com/user-attachments/assets/ab61f97c-58fa-4e11-bcb3-4966fb5b77a6)
 
 
-### 6.3 Use Cases / User Function Description
-
-#### Use Case: Upload Image
-- **Actor:** User
-- **Action:** Upload image via UI or API
-- **System Response:** Image is processed by Lambda and stored in S3; metadata saved in DynamoDB
-
-#### Use Case: View Processed Image (future)
-- **Actor:** User
-- **Action:** Request image via API
-- **System Response:** Return image from S3 and metadata from DynamoDB
