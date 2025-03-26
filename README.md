@@ -47,23 +47,23 @@ Optional enhancements include authentication via AWS Cognito and accelerated del
 
 #### 2.3.5 Estimates
 
-| #  | Description                                      | Hrs. Est. |
-|----|--------------------------------------------------|-----------|
-| 1  | Lambda image processor (Python)                  | 4         |
-| 2  | S3 + API Gateway setup                           | 3         |
-| 3  | DynamoDB logging + schema config                 | 2         |
-| 4  | CloudWatch logging & testing                     | 1.5       |
-| 5  | README and documentation                         | 2         |
-|    | **TOTAL**                                        | **12.5**  |
+| #    | Description                      | Hrs. Est. |
+| ---- | -------------------------------- | --------- |
+| 1    | Lambda image processor (Python)  | 4         |
+| 2    | S3 + API Gateway setup           | 3         |
+| 3    | DynamoDB logging + schema config | 2         |
+| 4    | CloudWatch logging & testing     | 1.5       |
+| 5    | README and documentation         | 2         |
+|      | **TOTAL**                        | **12.5**  |
 
 #### 2.3.6 Traceability Matrix
 
-| SRS Requirement | SDD Module                        |
-|-----------------|-----------------------------------|
-| Req 1           | Lambda image_processor.py         |
-| Req 2           | API Gateway + Lambda Integration  |
-| Req 3           | DynamoDB Table Logging            |
-| Req 4           | S3 Processed Image Storage        |
+| SRS Requirement | SDD Module                       |
+| --------------- | -------------------------------- |
+| Req 1           | Lambda image_processor.py        |
+| Req 2           | API Gateway + Lambda Integration |
+| Req 3           | DynamoDB Table Logging           |
+| Req 4           | S3 Processed Image Storage       |
 
 
 ## 3. System Architecture
@@ -110,15 +110,15 @@ Specifically, the architecture is based on the following workflow:
 
 This section outlines the schema of the primary DynamoDB table used to store metadata for each processed image.
 
-| Table     | Field Name | Notes                                 | Type     |
-|-----------|------------|----------------------------------------|----------|
-| Images    | ID         | Unique identifier (UUID or timestamp) | STRING   |
-|           | Filename   | Name of the original uploaded image    | STRING   |
-|           | Status     | Processing status (e.g., "processed") | STRING   |
-|           | Timestamp  | Time of upload or processing           | DATETIME |
-|           | S3Path     | Full S3 URI to the processed image     | STRING   |
-|           | Size       | Image size in bytes (after processing) | NUMBER   |
-|           | Format     | Output format (e.g., JPEG, PNG)        | STRING   |
+| Table  | Field Name | Notes                                  | Type     |
+| ------ | ---------- | -------------------------------------- | -------- |
+| Images | ID         | Unique identifier (UUID or timestamp)  | STRING   |
+|        | Filename   | Name of the original uploaded image    | STRING   |
+|        | Status     | Processing status (e.g., "processed")  | STRING   |
+|        | Timestamp  | Time of upload or processing           | DATETIME |
+|        | S3Path     | Full S3 URI to the processed image     | STRING   |
+|        | Size       | Image size in bytes (after processing) | NUMBER   |
+|        | Format     | Output format (e.g., JPEG, PNG)        | STRING   |
 
 - **ID** will serve as the primary key (partition key).
 - Additional attributes can be indexed or queried as needed.
@@ -133,15 +133,15 @@ The system stores image metadata in a DynamoDB table, while actual image files a
 
 **Entity: Image**
 
-| Attribute   | Description                                 |
-|-------------|---------------------------------------------|
-| ID          | Unique identifier for the image             |
-| Filename    | Original name of the uploaded file          |
-| Timestamp   | Time of upload or processing                |
-| Status      | Current status (e.g., "processed")          |
-| S3Path      | URI to the image in S3                      |
-| Size        | Size in bytes                               |
-| Format      | Format of the processed image (e.g., PNG)   |
+| Attribute | Description                               |
+| --------- | ----------------------------------------- |
+| ID        | Unique identifier for the image           |
+| Filename  | Original name of the uploaded file        |
+| Timestamp | Time of upload or processing              |
+| Status    | Current status (e.g., "processed")        |
+| S3Path    | URI to the image in S3                    |
+| Size      | Size in bytes                             |
+| Format    | Format of the processed image (e.g., PNG) |
 
 #### Entity Relationship (ERD Summary):
 
@@ -181,8 +181,6 @@ The system stores image metadata in a DynamoDB table, while actual image files a
     ![output-2-dynamodb-upload-meta](https://github.com/user-attachments/assets/075d3dbd-eedf-4984-a557-bc40f9073a77)
   - **Output 3**: API Gateway returns a `200 OK` status with confirmation 
     ![output-4-ok-status](https://github.com/user-attachments/assets/e11e2f63-3841-42aa-a5f2-739567b7ff7a)
-  - **Outout 4**: The grayscaled image output.
+  - **Output 4**: The gray scaled image output.
 
     ![output-3-lake-view-grayscale](https://github.com/user-attachments/assets/ab61f97c-58fa-4e11-bcb3-4966fb5b77a6)
-
-
