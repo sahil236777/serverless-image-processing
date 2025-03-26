@@ -75,7 +75,7 @@ Specifically, the architecture is based on the following workflow:
 1. **Input**: The user converts an image to base64 using the command below and submits it to the API endpoint:
 
    ```bash
-   base64 -w 0 lake_side_view.jpg > lake_side_view_encoded.txt
+   base64 -w 0 input-1-lake-view.jpg > input-1-lake-view-encoded.txt
    ```
 
    The image selected for this demonstration is the lake-view image retrieved from unsplash shown below.
