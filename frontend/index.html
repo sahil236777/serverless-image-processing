@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Upload – Serverless Processor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      background-color: #f3f4f6;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 3rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+    }
+
+    .drop-zone {
+      border: 2px dashed #999;
+      padding: 2rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      background-color: #fafafa;
+      transition: background 0.3s ease;
+    }
+
+    .drop-zone.dragover {
+      background-color: #e6f7ff;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .preview {
+      margin-top: 1rem;
+    }
+
+    img.preview-img {
+      max-width: 100%;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 0.7rem 1.5rem;
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #004c99;
+    }
+
+    .spinner {
+      display: none;
+      margin: 1rem auto;
+      border: 4px solid #eee;
+      border-top: 4px solid #0066cc;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 1rem 1.5rem;
+      background-color: #333;
+      color: white;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 999;
+    }
+
+    .toast.show { opacity: 1; }
+
+    .toast.success { background-color: #28a745; }
+    .toast.error   { background-color: #dc3545; }
+    .toast.warn    { background-color: #ffc107; color: #000; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Upload Your Image</h2>
+    <div class="drop-zone" id="dropZone">
+      <p>Drag & drop an image or <label for="imageInput" style="color:#0066cc; cursor:pointer;">browse</label></p>
+      <input type="file" id="imageInput" accept="image/*">
+    </div>
+    <button onclick="uploadImage()">Upload</button>
+    <div class="spinner" id="spinner"></div>
+    <div class="preview" id="previewContainer"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_URL = "https://mj045ps15a.execute-api.us-west-2.amazonaws.com/default/imageProcessor";
+    const input = document.getElementById("imageInput");
+    const dropZone = document.getElementById("dropZone");
+    const spinner = document.getElementById("spinner");
+    const toast = document.getElementById("toast");
+    const previewContainer = document.getElementById("previewContainer");
+
+    function showToast(message, type = 'success') {
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        input.files = files;
+        previewImage(files[0]);
+      }
+    });
+
+    input.addEventListener('change', () => {
+      if (input.files.length > 0) {
+        previewImage(input.files[0]);
+      }
+    });
+
+    function previewImage(file) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        previewContainer.innerHTML = `<img src="${reader.result}" class="preview-img" alt="Preview">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadImage() {
+      const file = input.files[0];
+      if (!file) return showToast("Please select an image file.", "warn");
+      if (file.size > 2048000) return showToast("File too large! Must be under 2MB.", "warn");
+
+      const reader = new FileReader();
+      reader.onloadend = async function () {
+        const base64String = reader.result.split(",")[1];
+        spinner.style.display = "block";
+        previewContainer.innerHTML = '';
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/plain"
+            },
+            body: base64String
+          });
+
+          const text = await response.text();
+          spinner.style.display = "none";
+
+          if (response.ok) {
+            showToast(`Success: ${text}`, "success");
+
+            const match = text.match(/processed\/[a-f0-9\-]+\.png/);
+            if (match) {
+              const processedKey = match[0];
+              const processedUrl = `https://serverless-image-s3-storage.s3.us-west-2.amazonaws.com/${processedKey}`;
+              const img = document.createElement("img");
+              img.src = processedUrl;
+              img.alt = "Processed Image";
+              img.className = "preview-img";
+              previewContainer.appendChild(img);
+            }
+
+          } else {
+            showToast(`Error: ${text}`, "error");
+          }
+
+        } catch (err) {
+          spinner.style.display = "none";
+          showToast(`Network error: ${err}`, "error");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+
+</body>
+</html>
