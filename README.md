@@ -2,7 +2,7 @@
 
 ## 1. Project Description
 
-### 1.1 Project
+### 1.1 Project Overview and Backend Structure
 **Serverless Image Processing Application**
 
 ### 1.2 Description
@@ -140,10 +140,7 @@ Each image corresponds to a single metadata record. Stored in S3 and DynamoDB re
 
 ![output-4-ok-status](https://github.com/user-attachments/assets/d152d492-d3f7-4ab4-b1c4-9f327d1922d6)
 
-Absolutely. Here's a well-structured continuation from **Section 7** of your README, formatted professionally and aligned with your instructor’s rubric and expectations:
-
----
-
+# FrontEnd and Hosting
 ## 7. Monitoring, Alarms, and Observability
 
 ### 7.1 Logging and Metrics Strategy
@@ -237,7 +234,9 @@ The following link allows login access:
 
 Credentials (username and password) will be shared securely via the Canvas submission form.
 
-> ![read-only-account](https://github.com/user-attachments/assets/5177fb00-9fb8-4a03-a860-a1864b011ee4)
+> ![read-only-account](https://github.com/user-attachments/assets/5177fb00-9fb8-4a03-a860-a1864b011ee4)'
+
+You can try outthe UI at: [http://serverless-image-frontend.s3-website-us-west-2.amazonaws.com](http://serverless-image-frontend.s3-website-us-west-2.amazonaws.com)
 
 
 ---
