@@ -1,3 +1,5 @@
+# Serverless Image Processing Application
+
 ## 1. Project Description
 
 ### 1.1 Project
@@ -5,6 +7,8 @@
 
 ### 1.2 Description
 This project implements a fully serverless cloud-native image processing solution using AWS. The application allows users to upload images via a REST API. Once uploaded, the images are automatically processed using AWS Lambda (resized, and converted to grayscale), then stored securely in an S3 bucket. Metadata such as upload timestamps and processing status is stored in DynamoDB. The system is designed with scalability, security, and monitoring in mind, leveraging key AWS services and best practices for cloud architecture.
+
+---
 
 ## 2. Overview
 
@@ -65,11 +69,13 @@ Optional enhancements include authentication via AWS Cognito and accelerated del
 | Req 3           | DynamoDB Table Logging           |
 | Req 4           | S3 Processed Image Storage       |
 
+---
 
 ## 3. System Architecture
 
 ### 3.1 Overview
 The system is designed using a fully serverless architecture. Users upload images via an API Gateway endpoint. The image is passed to an AWS Lambda function, which processes the image (resize, grayscale). Processed images are saved to an Amazon S3 bucket, while metadata (e.g., filename, timestamp, status) is stored in a DynamoDB table. CloudWatch tracks logs, performance, and anomalies.
+
 Specifically, the architecture is based on the following workflow:
 
 1. **Input**: The user converts an image to base64 using the command below and submits it to the API endpoint:
@@ -78,109 +84,173 @@ Specifically, the architecture is based on the following workflow:
    base64 -w 0 input-1-lake-view.jpg > input-1-lake-view-encoded.txt
    ```
 
-   The image selected for this demonstration is the lake-view image retrieved from unsplash shown below.
-
    ![input-1-lake-view](https://github.com/user-attachments/assets/bc0a7256-4378-4f74-b6fe-21663df121a2)
 
-
 2. **API Gateway**: Receives POST requests containing base64-encoded image content.
-
 3. **Lambda Function**: Decodes and processes the image (resize + grayscale using Pillow) and saves it as a PNG to an S3 bucket.
-
 4. **S3**: Receives the processed image under the `processed/` folder.
-
 5. **DynamoDB**: Logs metadata such as ID, filename, timestamp, status, image size, and format.
-
 6. **CloudWatch**: Logs success and error events for traceability.
 
 ### 3.2 Architectural Components
-
-- **API Gateway** – Receives HTTP requests for image upload and routes to Lambda.
-- **Lambda Function** – Handles image processing using the Pillow library in Python.
-- **S3** – Stores both original and processed images securely.
-- **DynamoDB** – Logs metadata like image name, upload time, and status.
-- **CloudWatch** – Monitors system performance and execution logs.
+- **API Gateway**
+- **Lambda Function**
+- **S3**
+- **DynamoDB**
+- **CloudWatch**
 
 ### 3.3 Architectural Diagram
-
 ![architeture diagram](https://github.com/user-attachments/assets/b9982e47-3a2f-4590-b9d0-e57c63e667ed)
 
+---
 
 ## 4. Data Dictionary
 
-This section outlines the schema of the primary DynamoDB table used to store metadata for each processed image.
+| Field Name | Notes                                  | Type     |
+|------------|----------------------------------------|----------|
+| ID         | Unique identifier                      | STRING   |
+| Filename   | Original uploaded file name            | STRING   |
+| Status     | Processing status                      | STRING   |
+| Timestamp  | ISO format of processing               | DATETIME |
+| S3Path     | Full URI in S3                         | STRING   |
+| Size       | File size in bytes                     | NUMBER   |
+| Format     | Output format                          | STRING   |
 
-| Table  | Field Name | Notes                                  | Type     |
-| ------ | ---------- | -------------------------------------- | -------- |
-| Images | ID         | Unique identifier (UUID or timestamp)  | STRING   |
-|        | Filename   | Name of the original uploaded image    | STRING   |
-|        | Status     | Processing status (e.g., "processed")  | STRING   |
-|        | Timestamp  | Time of upload or processing           | DATETIME |
-|        | S3Path     | Full S3 URI to the processed image     | STRING   |
-|        | Size       | Image size in bytes (after processing) | NUMBER   |
-|        | Format     | Output format (e.g., JPEG, PNG)        | STRING   |
-
-- **ID** will serve as the primary key (partition key).
-- Additional attributes can be indexed or queried as needed.
+---
 
 ## 5. Data Design
 
 ### 5.1 Persistent/Static Data
+Each image corresponds to a single metadata record. Stored in S3 and DynamoDB respectively.
 
-The system stores image metadata in a DynamoDB table, while actual image files are stored in S3. The logical relationship is one-to-one: each image record in DynamoDB corresponds to a single processed image in S3.
-
-### 5.1.1 Dataset Design
-
-**Entity: Image**
-
-| Attribute | Description                               |
-| --------- | ----------------------------------------- |
-| ID        | Unique identifier for the image           |
-| Filename  | Original name of the uploaded file        |
-| Timestamp | Time of upload or processing              |
-| Status    | Current status (e.g., "processed")        |
-| S3Path    | URI to the image in S3                    |
-| Size      | Size in bytes                             |
-| Format    | Format of the processed image (e.g., PNG) |
-
-#### Entity Relationship (ERD Summary):
-
+### 5.1.1 Entity Relationship Diagram
 ![ERD Summary](https://github.com/user-attachments/assets/0be8f689-a98b-4036-ad23-6d88884e1ca0)
 
-- **Primary Key:** ID
-- **No secondary indexes** are used in the base implementation but can be added for optimization (e.g., query by filename or timestamp).
+---
 
 ## 6. User Interface Design
 
-### 6.1 User Interface Design Overview
+### 6.1 Postman Workflow
 
-- ### 6.1 Interaction Using Postman
+![User Interface Navigation Flow](https://github.com/user-attachments/assets/5e6a3450-61c5-43a2-ac9c-d8d9536fdc1f)
 
-  ![User Interface Navigation Flow](https://github.com/user-attachments/assets/5e6a3450-61c5-43a2-ac9c-d8d9536fdc1f)
+- Header: `Content-Type: text/plain`
+- Body: raw base64
+- Returns 200 with image key
 
-  Users interact with the API using Postman. The steps to configure Postman are:
+![output-4-ok-status](https://github.com/user-attachments/assets/d152d492-d3f7-4ab4-b1c4-9f327d1922d6)
 
-  1. **Open Postman** and select the HTTP method as `POST`.
-  2. **Set the endpoint URL** pointing to your deployed API Gateway endpoint.
-     The endpoint is: **`https://mj045ps15a.execute-api.us-west-2.amazonaws.com/default/imageProcessor`**
-  4. **Set Headers**:
-     - Key: `Content-Type`, Value: `text/plain`
-        ![step-1-disable-the default-content-type-and-add-a-new-type-of-text-plain](https://github.com/user-attachments/assets/9f1a666e-dea9-45bf-a06d-4a8426655492)
-  5. **Select Body tab**, choose `raw`, and paste the base64 content of the image.
-     ![step-2-select-body-then-raw-and-change-the blue-part-next-to-graphql-to-text-and-paste-the-base64-image-content-therein](https://github.com/user-attachments/assets/a6d54a03-e15e-445c-9a0a-e0d1abb5d087)
-  6. **Send Request**. A successful response returns HTTP 200 and a message containing the processed file path.
-      ![output-4-ok-status](https://github.com/user-attachments/assets/d152d492-d3f7-4ab4-b1c4-9f327d1922d6)
+Absolutely. Here's a well-structured continuation from **Section 7** of your README, formatted professionally and aligned with your instructor’s rubric and expectations:
 
-  ### 6.2 Outputs
+---
 
-  After a successful image POST request:
+## 7. Monitoring, Alarms, and Observability
 
-  - **Output 1**: The processed image is uploaded to S3 
-    ![output-1-s3-upload-files](https://github.com/user-attachments/assets/233aff9c-aede-4a93-a2fe-4aff92501903)
-  - **Output 2**: The image's metadata is uploaded to DynamoDB 
-    ![output-2-dynamodb-upload-meta](https://github.com/user-attachments/assets/075d3dbd-eedf-4984-a557-bc40f9073a77)
-  - **Output 3**: API Gateway returns a `200 OK` status with confirmation 
-    ![output-4-ok-status](https://github.com/user-attachments/assets/e11e2f63-3841-42aa-a5f2-739567b7ff7a)
-  - **Output 4**: The gray scaled image output.
+### 7.1 Logging and Metrics Strategy
 
-    ![output-3-lake-view-grayscale](https://github.com/user-attachments/assets/ab61f97c-58fa-4e11-bcb3-4966fb5b77a6)
+The system leverages **Amazon CloudWatch** for centralized logging and metric aggregation across all components. All image processing activities executed by the Lambda function are logged to CloudWatch, including timestamped success and error messages. This provides full traceability and operational transparency into each step of the processing pipeline.
+
+In addition, custom metrics were integrated to track the number of successfully processed images and processing failures. These metrics were configured as CloudWatch logs using embedded log statements within the Lambda codebase. Logs are grouped and filtered by execution outcomes (`INFO`, `ERROR`), enabling near real-time insights into backend behavior.
+
+### 7.2 CloudWatch Dashboard
+
+To support monitoring, a **CloudWatch Dashboard** was created, visualizing key metrics such as:
+- Number of invocations
+- Duration per execution
+- Throttles or errors over time
+- Log volume by log group
+
+This dashboard facilitates continuous observation of backend health and ensures that processing throughput remains consistent.
+
+> ![cloudwatch-dashboard](https://github.com/user-attachments/assets/4eae7fe7-8b3f-4d7d-a919-66d38bf35f71)
+
+
+---
+
+## 8. Alarms Configuration
+
+### 8.1 Overview
+
+**CloudWatch Alarms** were implemented to proactively notify the system administrator of anomalies or degraded performance. These alarms are configured based on metrics such as function error count, duration spikes, and missing logs due to image size issues or API throttling.
+
+### 8.2 Alarm Details
+
+- **Error Rate Alarm**: Triggers when more than one invocation fails within a 5-minute period.
+- **Duration Alarm**: Triggers when Lambda execution time exceeds 3 seconds, which may indicate high image payloads or downstream slowdowns.
+- **Invocation Count Alarm**: Tracks usage trends for anomaly detection.
+
+Each alarm is tied to an Amazon SNS topic (internally configured) that could be subscribed to via email, SMS, or Lambda responders for remediation in production.
+
+---
+
+## 9. UI Consideration.
+Great effort was done to comply with the feedback from the previous submission. Consiquently a UI was introduced to seamlessly interact with the backend. the visuals are as follows:
+
+### Input Flow
+![input-before-processing](https://github.com/user-attachments/assets/74961041-5f18-4fc4-99ee-197792d938ad)
+
+### Output Flow
+![output-after-processing](https://github.com/user-attachments/assets/88a9f1db-0e3d-4e13-997d-b206b25c7d48)
+
+
+## 10. Security Considerations
+
+Security has been incorporated throughout the infrastructure in the following ways:
+
+### 10.1 IAM Configuration
+
+- The Lambda function was granted **least-privilege access** via a custom IAM role.
+- The IAM policy allows:
+  - `s3:PutObject` only to the processed bucket prefix
+  - `dynamodb:PutItem` to the `Images` table
+- The public-facing S3 bucket used for frontend hosting is restricted to **GET** operations only through a static bucket policy.
+
+### 10.2 Encryption and Access Control
+
+- **S3 Server-Side Encryption** (SSE-S3) was enabled for all objects in the bucket.
+- All data is encrypted **in-transit** via HTTPS using the API Gateway.
+- **API Gateway** was configured with CORS headers to avoid cross-origin vulnerability while enabling frontend interaction.
+- Console and programmatic access are disabled for temporary review IAM accounts.
+
+### 10.3 VPC Isolation (Optional)
+
+Although Lambda functions in this project are not explicitly deployed inside a VPC (due to lack of need for private resources), the setup is compatible with VPC deployment for future enhancements involving RDS or private subnets.
+
+---
+
+## 11. Read-Only AWS Instructor Account
+
+To facilitate grading and infrastructure review, a **read-only IAM user** named `instructor-review` has been created. This account has:
+
+- **No console access** (by design)
+- 11 AWS managed policies attached (e.g., `AmazonDynamoDBReadOnlyAccess`, `AmazonS3ReadOnlyAccess`, `CloudWatchReadOnlyAccess`)
+- View-only access to:
+  - Lambda executions
+  - API Gateway configurations
+  - S3 object structures
+  - CloudWatch logs and alarms
+  - DynamoDB table contents
+
+The following link allows login access:
+
+[https://463470959060.signin.aws.amazon.com/console](https://463470959060.signin.aws.amazon.com/console)
+
+Credentials (username and password) will be shared securely via the Canvas submission form.
+
+> ![read-only-account](https://github.com/user-attachments/assets/5177fb00-9fb8-4a03-a860-a1864b011ee4)
+
+
+---
+
+## 12. Final Remarks
+
+This project meets all functional and non-functional criteria outlined in the proposal and enhanced further with full-stack implementation and DevOps features:
+- Fully serverless image processing with automated grayscale conversion
+- Secure S3 storage and metadata logging
+- Monitored via CloudWatch
+- Operational transparency with alarms and dashboards
+- Production-grade frontend hosted on S3
+- Review access for instructors and evaluators
+
+The deployment is expected to remain **operational through April 19–20** for instructor review.
+
